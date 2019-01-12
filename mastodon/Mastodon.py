@@ -320,7 +320,7 @@ class Mastodon:
         formatted_params = urlencode(params)
         return "".join([self.api_base_url, "/oauth/authorize?", formatted_params])
 
-    def log_in(self, username=None, password=None,
+    def log_in(self, name=None, username=None, password=None,
                code=None, redirect_uri="urn:ietf:wg:oauth:2.0:oob", refresh_token=None,
                scopes=['read', 'write', 'follow'], to_file=None):
         """
@@ -340,7 +340,10 @@ class Mastodon:
 
         Returns the access token as a string.
         """
-        if username is not None and password is not None:
+        if name is not None and password is not None:
+            params = self.__generate_params(locals(), ['scopes', 'to_file', 'code', 'refresh_token'])
+            params['grant_type'] = 'password'
+        elif username is not None and password is not None:
             params = self.__generate_params(locals(), ['scopes', 'to_file', 'code', 'refresh_token'])
             params['grant_type'] = 'password'
         elif code is not None:
@@ -362,7 +365,7 @@ class Mastodon:
             self.__set_refresh_token(response.get('refresh_token'))
             self.__set_token_expired(int(response.get('expires_in', 0)))
         except Exception as e:
-            if username is not None or password is not None:
+            if name is not None or username is not None or password is not None:
                 raise MastodonIllegalArgumentError('Invalid user name, password, or redirect_uris: %s' % e)
             elif code is not None:
                 raise MastodonIllegalArgumentError('Invalid access token or redirect_uris: %s' % e)
